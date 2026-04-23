@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 const categories = ['All', 'Tech', 'Music', 'Sports', 'Art', 'Food', 'Workshops', 'Gaming', 'Wellness'];
 
@@ -15,16 +16,23 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F]">
+      <Navbar/>
 
       {/* HERO SECTION */}
       <section
-        className="relative min-h-[85vh] flex flex-col justify-center px-8 md:px-16 pt-16"
-        style={{
-          backgroundImage: 'url(https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&q=80)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
+        className="relative min-h-[90vh] flex flex-col justify-center px-8 md:px-20 pt-16"
       >
+        {/* VIDEO BACKGROUND */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ zIndex: 0 }}
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+        </video>
         {/* Dark overlay */}
         <div className="absolute inset-0"
           style={{

@@ -1,0 +1,200 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+
+const Register = () => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Register:', formData, agreeToTerms);
+  };
+
+  return (
+    <div className="h-screen flex overflow-hidden">
+      {/* Left Half - Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <img 
+          src="/Signup-pic.jpg" 
+          alt="EventHive" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center px-12">
+            <h2 className="text-4xl font-bold text-white mb-3">
+              Join the
+              <span className='text-amber-400'> community </span>
+              now
+            </h2>
+            <p className="text-lg text-white/90">
+              Create your account and start discovering amazing events in your city.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Half - Register Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-[#0a0a0a] px-8">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-3xl font-bold">
+              <span className="text-white">Event</span>
+              <span className="text-[#f59e0b]">Hive</span>
+            </span>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="text-center mb-5">
+            <h1 className="text-2xl font-bold text-white mb-1">Create your account</h1>
+            <p className="text-[#888] text-xs">Join EventHive and discover amazing events.</p>
+          </div>
+
+          {/* Social Signup Buttons */}
+          <div className="space-y-2.5 mb-4">
+            <button className="w-full bg-[#1a1a1a] hover:bg-[#252525] text-white border border-[#2a2a2a] py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-sm">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              Sign up with Google
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-[#2a2a2a]"></div>
+            <span className="text-[#666] text-[10px] uppercase">Or sign up with email</span>
+            <div className="flex-1 h-px bg-[#2a2a2a]"></div>
+          </div>
+
+          {/* Register Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label htmlFor="fullName" className="block text-white text-xs font-medium mb-1.5">
+                Full name
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="John Doe"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-[#f59e0b] transition"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-white text-xs font-medium mb-1.5">
+                Email address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="name@example.com"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-[#f59e0b] transition"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-white text-xs font-medium mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-[#f59e0b] transition"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-white text-xs font-medium mb-1.5">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white text-sm px-3 py-2.5 rounded-lg focus:outline-none focus:border-[#f59e0b] transition"
+                required
+              />
+            </div>
+
+            <div className="pt-2">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  className="w-3.5 h-3.5 mt-0.5 rounded border-[#2a2a2a] bg-[#1a1a1a] text-[#f59e0b] focus:ring-[#f59e0b] focus:ring-offset-0"
+                  required
+                />
+                <span className="text-[#aaa] text-xs leading-tight">
+                  I agree to the{' '}
+                  <Link to="/terms" className="text-[#f59e0b] hover:text-[#d97706] transition">
+                    Terms of Service
+                  </Link>
+                  {' '}and{' '}
+                  <Link to="/privacy" className="text-[#f59e0b] hover:text-[#d97706] transition">
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#f59e0b] hover:bg-[#d97706] text-black font-bold py-2.5 rounded-lg transition text-sm"
+            >
+              Create account
+            </button>
+          </form>
+
+          {/* Sign In Link */}
+          <p className="text-center text-[#888] text-xs mt-4">
+            Already have an account?{' '}
+            <Link to="/login" className="text-[#f59e0b] hover:text-[#d97706] transition font-medium">
+              Sign in
+            </Link>
+          </p>
+
+          {/* Footer */}
+          <p className="text-center text-[#555] text-[10px] mt-5">
+            © 2026 EventHive. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;
