@@ -1,286 +1,300 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useAuth } from '../context/AuthContext';
+import API from '../services/api';
 
 const Dashboard = () => {
-  const user = {
-    name: "Abhinav",
-    avatar: "/avatar.jpg",
-    memberSince: "April 2026",
-    eventsAttended: 5,
-    rsvpCount: 2
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [recommended, setRecommended] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    fetchDashboardData();
+  }, [user]);
+
+const fetchDashboardData = async () => {
+  try {
+    const API_KEY = import.meta.env.VITE_TICKETMASTER_KEY;
+
+    // Fetch user's RSVP'd events from YOUR backend
+    const { data: allEvents } = await API.get('/events');
+
+    // Filter events user has RSVP'd to
+    const myRsvps = allEvents.filter(e =>
+      e.attendees?.includes(user._id)
+    );
+
+    // Upcoming RSVPs
+    const now = new Date();
+    const upcoming = myRsvps.filter(e => new Date(e.date) >= now);
+    setUpcomingEvents(upcoming);
+
+    // Fetch recommended from Ticketmaster
+    const res = await fetch(
+      `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${API_KEY}&keyword=india&size=4&sort=date,asc`
+    );
+    const tmData = await res.json();
+    console.log('Ticketmaster dashboard:', tmData); // debug
+
+    const tmEvents = tmData._embedded?.events || [];
+
+    // Map to our card format
+    const mapped = tmEvents.map(e => ({
+      _id: e.id,
+      title: e.name,
+      category: e.classifications?.[0]?.segment?.name || 'Event',
+      date: e.dates?.start?.localDate,
+      time: e.dates?.start?.localTime?.slice(0, 5) || 'TBA',
+      location: {
+        address: `${e._embedded?.venues?.[0]?.name || ''}, ${e._embedded?.venues?.[0]?.city?.name || ''}`
+      },
+      image: e.images?.find(img => img.ratio === '16_9')?.url || e.images?.[0]?.url,
+      url: e.url,
+      isExternal: true
+    }));
+
+    setRecommended(mapped);
+
+  } catch (err) {
+    console.error('Dashboard fetch error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleCancelRsvp = async (eventId) => {
+    try {
+      await API.delete(`/events/${eventId}/rsvp`);
+      setUpcomingEvents(prev => prev.filter(e => e._id !== eventId));
+    } catch (err) {
+      console.error(err);
+    }
   };
-
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: "AI Builders Night: Ship Your First Agent",
-      category: "tech",
-      date: "Thu 18 Dec",
-      time: "18:30",
-      location: "The Hatchery, Brooklyn NY",
-      spotsLeft: "12 / 50 spots left",
-      image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600&h=400&fit=crop"
-    },
-    {
-      id: 2,
-      title: "Neon Pulse — Underground DJ Set",
-      category: "music",
-      date: "Sat 20 Dec",
-      time: "22:00",
-      location: "Warehouse 9, Bushwick",
-      spotsLeft: "22 / 120 spots left",
-      image: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&h=400&fit=crop"
-    }
-  ];
-
-  const pastEvents = [
-    {
-      id: 3,
-      title: "Sunset 5K — Community Run",
-      date: "Sun 21 Nov",
-      time: "17:00",
-      location: "Riverside Park, Pier 4",
-      image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&h=400&fit=crop"
-    },
-    {
-      id: 4,
-      title: "Risograph Zine Workshop",
-      date: "Mon 22 Nov",
-      time: "14:00",
-      location: "Ink & Fold Studio, SoHo"
-    }
-  ];
-
-  const recommendedEvents = [
-    {
-      id: 7,
-      title: "Retro Arcade Tournament",
-      category: "gaming",
-      date: "Sun 28 Dec",
-      time: "20:00",
-      location: "Pixel Bar, LES",
-      spotsLeft: "13 / 64 spots left",
-      image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=400&fit=crop"
-    },
-    {
-      id: 9,
-      title: "Indie Game Dev Showcase",
-      category: "tech",
-      date: "Sun 4 Jan",
-      time: "17:00",
-      location: "Brooklyn Commons",
-      spotsLeft: "45 / 80 spots left",
-      image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=400&fit=crop"
-    }
-  ];
 
   const getCategoryColor = (category) => {
     const colors = {
-      tech: 'bg-[#f59e0b]',
-      music: 'bg-[#ec4899]',
-      gaming: 'bg-[#f59e0b]'
+      Tech: 'bg-amber-500',
+      Music: 'bg-pink-500',
+      Sports: 'bg-green-500',
+      Art: 'bg-purple-500',
+      Food: 'bg-red-500',
+      Other: 'bg-amber-500'
     };
-    return colors[category] || 'bg-[#f59e0b]';
+    return colors[category] || 'bg-amber-500';
   };
+
+  // Events this month count
+  const thisMonth = upcomingEvents.filter(e => {
+    const eventDate = new Date(e.date);
+    const now = new Date();
+    return eventDate.getMonth() === now.getMonth() &&
+      eventDate.getFullYear() === now.getFullYear();
+  }).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+        <div className="text-amber-400 text-xl animate-pulse">Loading dashboard...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#000000]">
       <Navbar />
 
-      <div className="max-w-[1400px] mx-auto px-12 py-12 mt-10">
-        {/* User Profile Section */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-4">
-            <img 
-              src={user.avatar} 
-              alt={user.name}
-              className="w-16 h-16 rounded-full object-cover border-2 border-[#2a2a2a]"
-              onError={(e) => {
-                e.target.src = 'https://ui-avatars.com/api/?name=' + user.name + '&background=f59e0b&color=000';
-              }}
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                👋 Hey, {user.name}! 👋
-              </h1>
-              <p className="text-[#888] text-sm">Member since {user.memberSince}</p>
-            </div>
-          </div>
+      <div className="max-w-[1400px] mx-auto px-12 py-12">
 
-          <div className="flex gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white">{user.eventsAttended}</div>
-              <div className="text-[#888] text-xs uppercase">Events Attended</div>
+        {/* FIX 1 — More top padding */}
+        <div className="mt-24 mb-12 border rounded-3xl p-10 bg-[#1a1a1a] border-gray-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img
+                src={`https://ui-avatars.com/api/?name=${user?.name}&background=f59e0b&color=000&size=80`}
+                alt={user?.name}
+                className="w-20 h-20 rounded-full object-cover border-2 border-amber-500/30" />
+              <div>
+                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                  🔥 Hey, {user?.name}! 👋
+                </h1>
+                <p className="text-[#888] text-sm mt-1">{user?.email}</p>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-white">{user.rsvpCount}</div>
-              <div className="text-[#888] text-xs uppercase">RSVPs Pending</div>
+
+            {/* FIX 2 — Two stat boxes */}
+            <div className="flex gap-4 items-center">
+              <div className="text-center bg-[#0f0f0f] px-8 py-5 rounded-2xl border border-[#2a2a2a]">
+                <div className="text-3xl font-bold text-amber-400">{upcomingEvents.length}</div>
+                <div className="text-[#888] text-xs uppercase mt-1 tracking-wide">Upcoming RSVPs</div>
+              </div>
+              <div className="text-center bg-[#0f0f0f] px-8 py-5 rounded-2xl border border-[#2a2a2a]">
+                <div className="text-3xl font-bold text-amber-400">{thisMonth}</div>
+                <div className="text-[#888] text-xs uppercase mt-1 tracking-wide">This Month</div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Upcoming Events (RSVPs) */}
+        {/* Upcoming RSVPs */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              📅 Upcoming Events (RSVPs)
-            </h2>
-            <Link to="/calendar" className="text-[#f59e0b] text-sm hover:text-[#d97706] transition">
-              View calendar →
+            <h2 className="text-2xl font-bold text-white">📅 Upcoming Events (RSVPs)</h2>
+            <Link to="/" className="text-amber-400 text-sm hover:text-amber-300 transition">
+              Explore more →
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {upcomingEvents.map(event => (
-              <div key={event.id} className="bg-[#0f0f0f] rounded-xl overflow-hidden border border-[#1f1f1f]">
-                {event.image && (
-                  <div className="relative h-[180px]">
-                    <img 
-                      src={event.image} 
+          {upcomingEvents.length === 0 ? (
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-16 text-center">
+              <p className="text-5xl mb-4">🎟️</p>
+              <p className="text-gray-400 mb-2 text-lg font-medium">No upcoming events yet</p>
+              <p className="text-gray-600 text-sm mb-6">Browse events and RSVP to see them here</p>
+              <Link
+                to="/"
+                className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-3 rounded-full transition-all text-sm"
+              >
+                Browse Events
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {upcomingEvents.map(event => (
+                <div key={event._id} className="bg-[#0f0f0f] rounded-2xl overflow-hidden border border-[#1f1f1f] hover:border-amber-500 transition-all group">
+                  <div className="relative h-[180px] overflow-hidden">
+                    <img
+                      src={event.image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'}
                       alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <span className={`absolute top-3 left-3 ${getCategoryColor(event.category)} text-black text-[11px] font-bold px-3 py-1.5 rounded-md uppercase tracking-wide`}>
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <span className={`absolute top-3 left-3 ${getCategoryColor(event.category)} text-black text-[11px] font-bold px-3 py-1.5 rounded-full uppercase`}>
                       {event.category}
                     </span>
+                    <span className="absolute top-3 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full">
+                      {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
-                )}
-                
-                <div className="p-5">
-                  <h3 className="text-white font-bold text-[17px] mb-3 leading-tight">{event.title}</h3>
-                  
-                  <div className="space-y-2 text-[13px] text-[#888] mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">📅</span>
-                      <span>{event.date}</span>
-                      <span className="text-[#f59e0b] ml-2">🕐</span>
-                      <span>{event.time}</span>
+                  <div className="p-5">
+                    <h3 className="text-white font-bold text-lg mb-3 leading-tight line-clamp-2">{event.title}</h3>
+                    <div className="space-y-2 text-[13px] text-[#888] mb-4">
+                      <div className="flex items-center gap-2">
+                        <span>🕐</span><span>{event.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>📍</span><span>{event.location?.address}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>👥</span>
+                        <span>{event.attendees?.length} / {event.capacity} spots filled</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">📍</span>
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">👥</span>
-                      <span>{event.spotsLeft}</span>
-                    </div>
+                    <button
+                      onClick={() => handleCancelRsvp(event._id)}
+                      className="w-full bg-transparent hover:bg-red-500/10 text-gray-400 hover:text-red-400 border border-[#2a2a2a] hover:border-red-500 font-semibold py-2.5 rounded-xl transition-all text-sm"
+                    >
+                      Cancel RSVP
+                    </button>
                   </div>
-
-                  <button className="w-full bg-[#1a1a1a] hover:bg-[#252525] text-white border border-[#2a2a2a] font-semibold py-2.5 rounded-lg transition text-[13px]">
-                    Cancel RSVP
-                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Past Events I Attended */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6">
-            ✅ Past Events I Attended
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {pastEvents.map(event => (
-              <div key={event.id} className="bg-[#0f0f0f] rounded-xl overflow-hidden border border-[#1f1f1f]">
-                {event.image && (
-                  <div className="relative h-[180px]">
-                    <img 
-                      src={event.image} 
-                      alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className="p-5">
-                  <h3 className="text-white font-bold text-[17px] mb-3 leading-tight">{event.title}</h3>
-                  
-                  <div className="space-y-2 text-[13px] text-[#888] mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">📅</span>
-                      <span>{event.date}</span>
-                      <span className="text-[#f59e0b] ml-2">🕐</span>
-                      <span>{event.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">📍</span>
-                      <span>{event.location}</span>
-                    </div>
-                  </div>
-
-                  <button className="w-full bg-[#1a1a1a] hover:bg-[#252525] text-white border border-[#2a2a2a] font-semibold py-2.5 rounded-lg transition text-[13px]">
-                    View Memories
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recommended For You */}
         <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              💡 Recommended For You
-            </h2>
-            <Link to="/explore" className="text-[#f59e0b] text-sm hover:text-[#d97706] transition">
-              View all →
-            </Link>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-white">🔍 Recommended For You</h2>
           </div>
+          <p className="text-[#888] text-sm mb-6">Events happening around you</p>
 
-          <p className="text-[#888] text-sm mb-6">Based on categories you've joined</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recommendedEvents.map(event => (
-              <div key={event.id} className="bg-[#0f0f0f] rounded-xl overflow-hidden border border-[#1f1f1f]">
-                {event.image && (
-                  <div className="relative h-[180px]">
-                    <img 
-                      src={event.image} 
+          {recommended.length === 0 ? (
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-16 text-center">
+              <p className="text-5xl mb-4">🎭</p>
+              <p className="text-gray-400 mb-2 text-lg font-medium">No recommendations yet</p>
+              <p className="text-gray-600 text-sm">Check back soon for events near you</p>
+            </div>
+            ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {recommended.map(event => (
+                <div key={event._id} className="bg-[#0f0f0f] rounded-2xl overflow-hidden border border-[#1f1f1f] hover:border-amber-500 transition-all group">
+                  <div className="relative h-[180px] overflow-hidden">
+                    <img
+                      src={event.image || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80'}
                       alt={event.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <span className={`absolute top-3 left-3 ${getCategoryColor(event.category)} text-black text-[11px] font-bold px-3 py-1.5 rounded-md uppercase tracking-wide`}>
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <span className={`absolute top-3 left-3 ${getCategoryColor(event.category)} text-black text-[11px] font-bold px-3 py-1.5 rounded-full uppercase`}>
                       {event.category}
                     </span>
-                  </div>
-                )}
-                
-                <div className="p-5">
-                  <h3 className="text-white font-bold text-[17px] mb-3 leading-tight">{event.title}</h3>
-                  
-                  <div className="space-y-2 text-[13px] text-[#888] mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">📅</span>
-                      <span>{event.date}</span>
-                      <span className="text-[#f59e0b] ml-2">🕐</span>
-                      <span>{event.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">📍</span>
-                      <span>{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#f59e0b]">👥</span>
-                      <span>{event.spotsLeft}</span>
-                    </div>
+                    <span className="absolute top-3 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full">
+                      {event.date
+                        ? new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : 'TBA'}
+                    </span>
+
+                    {/* External badge */}
+                    {event.isExternal && (
+                      <span className="absolute bottom-3 right-3 bg-black/70 text-amber-400 text-xs px-2 py-1 rounded-full border border-amber-500/30">
+                        Ticketmaster
+                      </span>
+                    )}
                   </div>
 
-                  <button className="w-full bg-[#f59e0b] hover:bg-[#d97706] text-black font-bold py-2.5 rounded-lg transition text-[13px]">
-                    RSVP
-                  </button>
+                  <div className="p-5">
+                    <h3 className="text-white font-bold text-lg mb-3 leading-tight line-clamp-2">
+                      {event.title}
+                    </h3>
+                    <div className="space-y-2 text-[13px] text-[#888] mb-4">
+                      <div className="flex items-center gap-2">
+                        <span>🕐</span><span>{event.time || 'TBA'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>📍</span>
+                        <span className="line-clamp-1">{event.location?.address || 'Location TBA'}</span>
+                      </div>
+                      {!event.isExternal && (
+                        <div className="flex items-center gap-2">
+                          <span>👥</span>
+                          <span>{event.attendees?.length || 0} / {event.capacity} spots left</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Button — external vs internal */}
+                      <Link
+                        to={`/events/${event._id}`}
+                        className="block w-full text-center bg-amber-500 hover:bg-amber-400 text-black font-bold py-2.5 rounded-xl transition-all text-sm"
+                      >
+                        View Details →
+                      </Link>
                 </div>
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
+        )}
       </div>
 
-      <Footer />
+      {/* Become Organizer Banner */}
+      <div className="bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 rounded-2xl p-10 text-center mb-12">
+        <p className="text-3xl mb-3">🎯</p>
+        <h3 className="text-white font-bold text-2xl mb-2">Want to host your own event?</h3>
+        <p className="text-gray-400 text-sm mb-6">Create your first event in minutes and bring people together.</p>
+        <Link
+          to="/create-event"
+          className="inline-block bg-amber-500 hover:bg-amber-400 text-black font-bold px-10 py-3 rounded-full transition-all"
+        >
+          Create Event →
+        </Link>
+      </div>
+
+    </div><Footer />
     </div>
   );
 };

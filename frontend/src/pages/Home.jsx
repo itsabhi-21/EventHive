@@ -1,47 +1,85 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fetchEvents } from '../services/ticketmaster';
 import Navbar from '../components/Navbar';
 
-const categories = ['All', 'Tech', 'Music', 'Sports', 'Art', 'Food', 'Workshops', 'Gaming', 'Wellness'];
+const categories = ['All', 'Music', 'Sports', 'Arts & Theatre', 'Film', 'Miscellaneous'];
 
 const categoryIcons = {
-  All: '✦', Tech: '</>',  Music: '♪', Sports: '⚽',
-  Art: '◎', Food: '🍴', Workshops: '⚒', Gaming: '🎮', Wellness: '❋'
+  'All': '✦',
+  'Music': '♪',
+  'Sports': '⚽',
+  'Arts & Theatre': '◎',
+  'Film': '🎬',
+  'Miscellaneous': '⚒'
 };
 
 const Home = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+
+  // Fetch events when category changes
+  useEffect(() => {
+    const loadEvents = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const keyword = activeCategory === 'All' ? '' : activeCategory;
+        const data = await fetchEvents({ keyword, city: 'Mumbai', size: 9 });
+        setEvents(data);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load events. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadEvents();
+  }, [activeCategory]);
+
+  // Search handler
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchEvents({ keyword: searchQuery, city: 'Mumbai', size: 9 });
+      setEvents(data);
+    } catch (err) {
+      setError('Search failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0F0F0F]">
       <Navbar/>
 
       {/* HERO SECTION */}
-      <section
-        className="relative min-h-[90vh] flex flex-col justify-center px-8 md:px-20 pt-16"
-      >
-        {/* VIDEO BACKGROUND */}
+      <section className="relative min-h-[90vh] flex flex-col justify-center px-8 md:px-20 pt-16">
+        
+        {/* Video Background */}
         <video
-          autoPlay
-          loop
-          muted
-          playsInline
+          autoPlay loop muted playsInline
           className="absolute inset-0 w-full h-full object-cover"
           style={{ zIndex: 0 }}
         >
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
-        {/* Dark overlay */}
-        <div className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(to right, rgba(0,0,0,0.92) 45%, rgba(245,158,11,0.12) 100%)'
-          }}
-        />
+
+        {/* Dark Overlay */}
+        <div className="absolute inset-0" style={{
+          background: 'linear-gradient(to right, rgba(0,0,0,0.92) 45%, rgba(245,158,11,0.12) 100%)',
+          zIndex: 1
+        }} />
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-2xl">
+        <div className="relative max-w-2xl" style={{ zIndex: 2 }}>
 
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-full px-4 py-2 mb-6">
@@ -69,11 +107,12 @@ const Home = () => {
                 placeholder="Search events, venues, vibes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="bg-transparent text-white placeholder-gray-500 outline-none w-full text-sm"
               />
             </div>
             <button
-              onClick={() => navigate('/events')}
+              onClick={handleSearch}
               className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-3 rounded-full transition-all duration-200"
             >
               Explore Events
@@ -83,9 +122,10 @@ const Home = () => {
           {/* Popular Tags */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-gray-500 text-sm">Popular:</span>
-            {['Tech meetup', 'DJ night', '5K run', 'Ramen crawl'].map((tag) => (
+            {['Music', 'Sports', 'Comedy', 'Festival'].map((tag) => (
               <button
                 key={tag}
+                onClick={() => setSearchQuery(tag)}
                 className="border border-[#2A2A2A] text-gray-400 text-xs px-3 py-1 rounded-full hover:border-amber-500 hover:text-amber-400 transition-all"
               >
                 {tag}
@@ -97,7 +137,7 @@ const Home = () => {
 
       {/* CATEGORY FILTER */}
       <section className="sticky top-0 z-30 bg-[#0F0F0F] border-b border-[#2A2A2A] px-8 py-4">
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-3 overflow-x-auto">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -117,44 +157,121 @@ const Home = () => {
 
       {/* EVENTS SECTION */}
       <section className="px-8 md:px-16 py-12">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-3xl font-bold text-white">Happening near you</h2>
-          <span className="text-sm text-gray-500 border border-[#2A2A2A] px-3 py-1 rounded-full">
-            10 events
-          </span>
-        </div>
-        <p className="text-gray-500 text-sm mb-8">Tap RSVP to lock your spot. Free unless noted.</p>
 
-        {/* Events Grid — placeholder for now */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1,2,3].map((i) => (
-            <div key={i} className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl overflow-hidden hover:border-amber-500 transition-all duration-200 cursor-pointer">
-              <div className="relative">
-                <img
-                  src={`https://images.unsplash.com/photo-${i === 1 ? '1540575467063-178a50c2df87' : i === 2 ? '1511795409834-ef04bbd61622' : '1461896836934-ffe607ba8211'}?w=600&q=80`}
-                  alt="event"
-                  className="w-full h-48 object-cover"
-                />
-                <span className="absolute top-3 left-3 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full">
-                  {i === 1 ? 'TECH' : i === 2 ? 'MUSIC' : 'SPORTS'}
-                </span>
-              </div>
-              <div className="p-5">
-                <h3 className="text-white font-bold text-lg mb-3">
-                  {i === 1 ? 'AI Builders Night' : i === 2 ? 'Neon Pulse — DJ Set' : 'Sunset 5K Run'}
-                </h3>
-                <div className="space-y-1 mb-4">
-                  <p className="text-gray-400 text-sm">📅 Thu 18 Dec &nbsp; 🕐 18:30</p>
-                  <p className="text-gray-400 text-sm">📍 Connaught Place, Delhi</p>
-                  <p className="text-gray-400 text-sm">👥 12 / 50 spots left</p>
-                </div>
-                <button className="w-full border border-amber-500 text-amber-400 font-bold py-2 rounded-xl hover:bg-amber-500 hover:text-black transition-all duration-200">
-                  RSVP
-                </button>
-              </div>
-            </div>
-          ))}
+        {/* Section Header */}
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-3xl font-bold text-white">
+            {activeCategory === 'All' ? 'Happening near you' : `${activeCategory} Events`}
+          </h2>
+          {!loading && (
+            <span className="text-sm text-gray-500 border border-[#2A2A2A] px-3 py-1 rounded-full">
+              {events.length} event{events.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
+        <p className="text-gray-500 text-sm mb-8">Tap to explore. Free unless noted.</p>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl overflow-hidden animate-pulse">
+                <div className="w-full h-48 bg-[#2A2A2A]" />
+                <div className="p-5 space-y-3">
+                  <div className="h-4 bg-[#2A2A2A] rounded w-3/4" />
+                  <div className="h-3 bg-[#2A2A2A] rounded w-1/2" />
+                  <div className="h-3 bg-[#2A2A2A] rounded w-2/3" />
+                  <div className="h-8 bg-[#2A2A2A] rounded-xl mt-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-20">
+            <p className="text-4xl mb-4">😕</p>
+            <p className="text-gray-400">{error}</p>
+            <button
+              onClick={() => setActiveCategory('All')}
+              className="mt-4 border border-amber-500 text-amber-400 px-6 py-2 rounded-full text-sm hover:bg-amber-500 hover:text-black transition-all"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && events.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-4xl mb-4">🎭</p>
+            <p className="text-gray-400">No events found in this category.</p>
+            <button
+              onClick={() => setActiveCategory('All')}
+              className="mt-4 border border-amber-500 text-amber-400 px-6 py-2 rounded-full text-sm hover:bg-amber-500 hover:text-black transition-all"
+            >
+              View all events
+            </button>
+          </div>
+        )}
+
+        {/* Events Grid */}
+        {!loading && !error && events.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event) => (
+              <div
+                key={event.id}
+                className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl overflow-hidden hover:border-amber-500 transition-all duration-200 cursor-pointer group"
+              >
+                {/* Image */}
+                <div className="relative overflow-hidden">
+                  <img
+                    src={event.images?.find(img => img.ratio === '16_9')?.url || event.images?.[0]?.url || '/placeholder.jpg'}
+                    alt={event.name}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {/* Category Badge */}
+                  <span className="absolute top-3 left-3 bg-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full">
+                    {event.classifications?.[0]?.segment?.name || 'EVENT'}
+                  </span>
+                  {/* Date Badge */}
+                  <span className="absolute top-3 right-3 bg-black/70 text-white text-xs px-3 py-1 rounded-full">
+                    {event.dates?.start?.localDate}
+                  </span>
+                </div>
+
+                {/* Info */}
+                <div className="p-5">
+                  <h3 className="text-white font-bold text-lg mb-3 line-clamp-2 leading-snug">
+                    {event.name}
+                  </h3>
+                  <div className="space-y-1 mb-4">
+                    <p className="text-gray-400 text-sm">
+                      🕐 {event.dates?.start?.localTime?.slice(0, 5) || 'TBA'}
+                    </p>
+                    <p className="text-gray-400 text-sm truncate">
+                      📍 {event._embedded?.venues?.[0]?.name}, {event._embedded?.venues?.[0]?.city?.name}
+                    </p>
+                    {event.priceRanges && (
+                      <p className="text-amber-400 text-sm font-medium">
+                        💰 From ₹{Math.round(event.priceRanges[0]?.min)} onwards
+                      </p>
+                    )}
+                  </div>
+                  <a
+                    href={event.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full text-center border border-amber-500 text-amber-400 font-bold py-2 rounded-xl hover:bg-amber-500 hover:text-black transition-all duration-200 text-sm"
+                  >
+                    Get Tickets →
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* FOOTER */}
@@ -163,15 +280,16 @@ const Home = () => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">🔥</span>
-              <span className="text-white font-bold text-xl">Event<span className="text-amber-400">Hive</span></span>
+              <span className="text-white font-bold text-xl">
+                Event<span className="text-amber-400">Hive</span>
+              </span>
             </div>
             <p className="text-gray-500 text-sm">Find your people. Go do the thing.</p>
           </div>
           <div className="flex gap-8 text-gray-500 text-sm">
-            <a href="#" className="hover:text-amber-400 transition-colors">Explore</a>
-            <a href="#" className="hover:text-amber-400 transition-colors">Host Event</a>
-            <a href="#" className="hover:text-amber-400 transition-colors">About</a>
-            <a href="#" className="hover:text-amber-400 transition-colors">Contact</a>
+            {['Explore', 'Host Event', 'About', 'Contact'].map(link => (
+              <a key={link} href="#" className="hover:text-amber-400 transition-colors">{link}</a>
+            ))}
           </div>
         </div>
         <div className="flex justify-between items-center mt-8 pt-6 border-t border-[#2A2A2A]">

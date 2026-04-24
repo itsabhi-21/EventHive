@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const EventCard = ({ event }) => {
   const getCategoryColor = (category) => {
     const colors = {
@@ -48,9 +50,17 @@ const EventCard = ({ event }) => {
           </div>
         </div>
 
-        <button className="w-full bg-[#f59e0b] hover:bg-[#d97706] text-black font-bold py-3 rounded-lg transition-colors text-[14px] tracking-wide">
-          RSVP
-        </button>
+        <div className="flex gap-2">
+          <Link 
+            to={`/event/${event.id}`}
+            className="flex-1 bg-[#1a1a1a] hover:bg-[#252525] text-white text-center border border-[#2a2a2a] font-semibold py-3 rounded-lg transition-colors text-[14px] tracking-wide"
+          >
+            View Details
+          </Link>
+          <button className="flex-1 bg-[#f59e0b] hover:bg-[#d97706] text-black font-bold py-3 rounded-lg transition-colors text-[14px] tracking-wide">
+            RSVP
+          </button>
+        </div>
       </div>
     </div>
   );
