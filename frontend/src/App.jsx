@@ -9,6 +9,8 @@ import Calendar from './pages/Calendar';
 import Profile from './pages/Profile';
 import EventDetails from './pages/EventDetails';
 import Explore from './pages/Explore';
+import AuthSuccess from './pages/AuthSuccess';
+
 
 function App() {
   return (
@@ -20,6 +22,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/explore" element={<Explore />} />
           <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/auth/success" element={<AuthSuccess />} />
           <Route 
             path="/dashboard" 
             element={

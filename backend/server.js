@@ -1,30 +1,43 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const app = express();
+const passport = require('passport');
+const session = require('express-session');
 require('dotenv').config();
-const PORT = process.env.PORT || 5000;
-
-app.use(cors());
-app.use(express.json());
+require('./config/passport'); // load passport config
 
 const authRoutes = require('./routes/authRoutes');
-const eventRoutes = require('./routes/eventRoutes')
+const eventRoutes = require('./routes/eventRoutes');
+const googleAuthRoutes = require('./routes/googleAuth');
 
+const app = express();
+
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true
+}));
+app.use(express.json());
+
+// Session needed for passport
+app.use(session({
+  secret: process.env.JWT_SECRET,
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes); // google routes
 app.use('/api/events', eventRoutes);
 
-app.get('/', (req, res) => {
-    res.send('Welcome to the EventHive API!');
-});
+const PORT = process.env.PORT || 5000;
 
 mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-    console.log('Connected to MongoDB');
-}).catch((err) => {
-    console.error('Error connecting to MongoDB:', err);
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+  .then(() => {
+    console.log('MongoDB connected');
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch((err) => console.log(err));
