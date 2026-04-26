@@ -1,4 +1,4 @@
-# 🔥 EventHive
+# EventHive
 
 A modern, full-stack event discovery and management platform. Browse trending events, RSVP, create your own, and connect with a vibrant community — all in a sleek dark-themed UI.
 
@@ -254,9 +254,3 @@ The app will be available at **http://localhost:5173**
 ## 👤 Author
 
 **Abhinav Choudhary**
-
----
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
