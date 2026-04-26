@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     const data = await authService.login(credentials);
     setUser({
-      id: data._id,
+      _id: data._id,
       name: data.name,
       email: data.email
     });
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     const data = await authService.register(userData);
     setUser({
-      id: data._id,
+      _id: data._id,
       name: data.name,
       email: data.email
     });
@@ -47,12 +47,20 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (updatedData) => {
+    const newUser = { ...user, ...updatedData };
+    setUser(newUser);
+    // Update localStorage too
+    localStorage.setItem('user', JSON.stringify(newUser));
+  };
+
   const value = {
     user,
     loading,
     login,
     register,
     logout,
+    updateUser,
     isAuthenticated: !!user,
   };
 

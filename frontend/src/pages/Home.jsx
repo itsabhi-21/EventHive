@@ -3,10 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { fetchEvents } from '../services/ticketmaster';
 import Navbar from '../components/Navbar';
 
-const categories = ['All', 'Music', 'Sports', 'Arts & Theatre', 'Film', 'Miscellaneous'];
+const categories = ['Music', 'Sports', 'Arts & Theatre', 'Film', 'Miscellaneous'];
 
 const categoryIcons = {
-  'All': '✦',
   'Music': '♪',
   'Sports': '⚽',
   'Arts & Theatre': '◎',
@@ -18,7 +17,7 @@ const Home = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState('Music');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
@@ -28,9 +27,11 @@ const Home = () => {
       setLoading(true);
       setError('');
       try {
-        const keyword = activeCategory === 'All' ? '' : activeCategory;
-        const data = await fetchEvents({ keyword, city: 'Mumbai', size: 9 });
-        setEvents(data);
+        const data = await fetchEvents({ keyword: activeCategory, city: 'Mumbai', size: 20 });
+        const withImages = data.filter(event =>
+          event.images?.some(img => img.ratio === '16_9' && img.width > 500)
+        );
+        setEvents(withImages.slice(0, 9));
       } catch (err) {
         console.error(err);
         setError('Failed to load events. Please try again.');
@@ -47,8 +48,11 @@ const Home = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchEvents({ keyword: searchQuery, city: 'Mumbai', size: 9 });
-      setEvents(data);
+      const data = await fetchEvents({ keyword: searchQuery, city: 'Delhi', size: 20 });
+      const withImages = data.filter(event =>
+        event.images?.some(img => img.ratio === '16_9' && img.width > 500)
+      );
+      setEvents(withImages.slice(0, 9));
     } catch (err) {
       setError('Search failed. Please try again.');
     } finally {
@@ -161,7 +165,7 @@ const Home = () => {
         {/* Section Header */}
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-3xl font-bold text-white">
-            {activeCategory === 'All' ? 'Happening near you' : `${activeCategory} Events`}
+            {`${activeCategory} Events`}
           </h2>
           {!loading && (
             <span className="text-sm text-gray-500 border border-[#2A2A2A] px-3 py-1 rounded-full">
@@ -227,7 +231,12 @@ const Home = () => {
                 {/* Image */}
                 <div className="relative overflow-hidden">
                   <img
-                    src={event.images?.find(img => img.ratio === '16_9')?.url || event.images?.[0]?.url || '/placeholder.jpg'}
+                    src={
+                      event.images?.find(img => img.ratio === '16_9' && img.width >= 1024)?.url ||
+                      event.images?.find(img => img.ratio === '16_9' && img.width > 500)?.url ||
+                      event.images?.find(img => img.ratio === '16_9')?.url ||
+                      'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'
+                    }
                     alt={event.name}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />

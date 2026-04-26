@@ -39,6 +39,7 @@ const createEvent = async (req, res) => {
       image,
       organizer: req.user._id
     });
+    await event.save();
     await User.findByIdAndUpdate(req.user._id, {
       $push: { eventsCreated: event._id }
     });

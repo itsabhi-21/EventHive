@@ -21,9 +21,12 @@ const Navbar = () => {
 
       {/* Nav Links */}
       <div className="hidden md:flex items-center gap-8">
-        <Link to="/" className="text-gray-400 hover:text-white text-sm transition-colors">Explore</Link>
+        <Link to="/explore" className="text-gray-400 hover:text-white text-sm transition-colors">Explore</Link>
         {isAuthenticated && (
           <Link to="/profile" className="text-gray-400 hover:text-white text-sm transition-colors">Profile</Link>
+        )}
+        {user && (
+          <Link to="/dashboard" className="text-gray-400 hover:text-white text-sm transition-colors">Dashboard</Link>
         )}
       </div>
 
