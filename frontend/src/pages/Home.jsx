@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchEvents } from '../services/ticketmaster';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
 const categories = ['Music', 'Sports', 'Arts & Theatre', 'Film', 'Miscellaneous'];
@@ -20,6 +21,7 @@ const Home = () => {
   const [activeCategory, setActiveCategory] = useState('Music');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // Fetch events when category changes
   useEffect(() => {
@@ -116,7 +118,10 @@ const Home = () => {
               />
             </div>
             <button
-              onClick={handleSearch}
+              onClick={() => {
+                if (searchQuery.trim()) handleSearch();
+                document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' });
+              }}
               className="bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-3 rounded-full transition-all duration-200"
             >
               Explore Events
@@ -160,7 +165,7 @@ const Home = () => {
       </section>
 
       {/* EVENTS SECTION */}
-      <section className="px-8 md:px-16 py-12">
+      <section id="events" className="px-8 md:px-16 py-12">
 
         {/* Section Header */}
         <div className="flex justify-between items-center mb-2">
@@ -268,14 +273,12 @@ const Home = () => {
                       </p>
                     )}
                   </div>
-                  <a
-                    href={event.url}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
                     className="block w-full text-center border border-amber-500 text-amber-400 font-bold py-2 rounded-xl hover:bg-amber-500 hover:text-black transition-all duration-200 text-sm"
                   >
                     Get Tickets →
-                  </a>
+                  </button>
                 </div>
               </div>
             ))}
