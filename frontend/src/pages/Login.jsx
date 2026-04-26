@@ -70,7 +70,7 @@ const Login = () => {
           {/* Social Login Buttons */}
           <div className="space-y-2.5 mb-5">
               <a
-                href={`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`}
+                href={'https://eventhive-vew1.onrender.com/api/auth/google'}
                 className="w-full flex items-center justify-center gap-3 bg-[#1A1A1A] border border-[#2A2A2A] hover:border-amber-500 text-white font-medium py-3 rounded-xl transition-all duration-200 text-sm"
               >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
