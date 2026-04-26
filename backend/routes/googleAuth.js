@@ -18,7 +18,7 @@ router.get('/google',
 // Step 2 — Google calls back here
 router.get('/google/callback',
   passport.authenticate('google', {
-    failureRedirect: 'https://event-hive-one-gules.vercel.app/login',
+    failureRedirect: `${process.env.FRONTEND_URL}/login`,
     session: false
   }),
   (req, res) => {
@@ -33,7 +33,7 @@ router.get('/google/callback',
     };
 
     res.redirect(
-      `https://event-hive-one-gules.vercel.app/auth/success?data=${encodeURIComponent(JSON.stringify(userData))}`
+      `${process.env.FRONTEND_URL}/auth/success?data=${encodeURIComponent(JSON.stringify(userData))}`
     );
   }
 );

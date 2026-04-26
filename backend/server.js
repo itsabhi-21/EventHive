@@ -13,7 +13,11 @@ const googleAuthRoutes = require('./routes/googleAuth');
 const app = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_URL,
+  origin: [
+    process.env.FRONTEND_URL,
+    'http://localhost:5173',
+    'https://event-hive-one-gules.vercel.app'
+  ],
   credentials: true
 }));
 app.use(express.json());

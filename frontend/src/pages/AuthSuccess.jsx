@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 const AuthSuccess = () => {
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { updateUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -12,10 +12,23 @@ const AuthSuccess = () => {
     if (data) {
       try {
         const userData = JSON.parse(decodeURIComponent(data));
-        login(userData);
+        // Store token and user data directly (already authenticated via Google)
+        localStorage.setItem('token', userData.token);
+        localStorage.setItem('user', JSON.stringify({
+          _id: userData._id,
+          name: userData.name,
+          email: userData.email,
+          avatar: userData.avatar
+        }));
+        updateUser({
+          _id: userData._id,
+          name: userData.name,
+          email: userData.email,
+          avatar: userData.avatar
+        });
         navigate('/dashboard');
       } catch (err) {
-        console.error(err);
+        console.error('Auth success error:', err);
         navigate('/login');
       }
     } else {
